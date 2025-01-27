@@ -15,4 +15,6 @@ public record Point(long Y, long X) {
 
   public IEnumerable<Point> CardinalNeighbors() => Vector.Cardinals.Select(v => this + v);
   public IEnumerable<Point> InterCardinalNeighbors() => Vector.InterCardinals.Select(v => this + v);
+  public IEnumerable<Point> CompassRoseNeighbors() => Vector.CompassRose.Select(v => this + v);
+
 }
