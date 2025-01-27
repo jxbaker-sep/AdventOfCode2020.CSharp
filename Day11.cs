@@ -1,10 +1,8 @@
-
-using System.Linq;
 using AdventOfCode2020.CSharp.Utils;
 using FluentAssertions;
+using Microsoft.VisualBasic;
 using Parser;
 using Utils;
-using P = Parser.ParserBuiltins;
 
 namespace AdventOfCode2020.CSharp;
 
@@ -22,6 +20,27 @@ public class Day11
     grid.Count(kv => kv.Value == '#').Should().Be(expected);
   }
 
+  [Theory]
+  [InlineData("Day11.Sample", 26)]
+  [InlineData("Day11", 0)]
+  public void Part2(string file, int expected)
+  {
+    var grid = Convert(AoCLoader.LoadLines(file));
+
+    IEnumerable<Point> Open(Point point)
+    {
+      foreach(var vector in Vector.CompassRose)
+      {
+        var z = point.Follow(vector).TakeWhile(p2 => grid.ContainsKey(p2)).Where(it => grid[it] != '.').Take(1).ToList();
+        if (z.Count > 0) yield return z[0];
+      }
+    }
+
+    DoIt(grid, Open);
+
+    grid.Count(kv => kv.Value == '#').Should().Be(expected);
+  }
+
   private void DoIt(Dictionary<Point, char> grid, Func<Point, IEnumerable<Point>> open)
   {
     HashSet<string> seen = [];
@@ -30,9 +49,9 @@ public class Day11
     while (!seen.Contains(Key()))
     {
       seen.Add(Key());
-      Dictionary<Point, int> counts = 
-        grid.Where(kv => kv.Value == '#')
+      Dictionary<Point, int> counts = grid
         .SelectMany(kv => open(kv.Key))
+        .Where(neighbor => grid.GetValueOrDefault(neighbor) == '#')
         .GroupToDictionary(it => it, it => it, it => it.Count);
 
       foreach(var (point, value) in grid.ToList())
