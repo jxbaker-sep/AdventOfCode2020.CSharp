@@ -1,6 +1,5 @@
 using AdventOfCode2020.CSharp.Utils;
 using FluentAssertions;
-using Microsoft.VisualBasic;
 using Parser;
 using Utils;
 
@@ -15,14 +14,14 @@ public class Day11
   {
     var grid = Convert(AoCLoader.LoadLines(file));
 
-    DoIt(grid, point => point.CompassRoseNeighbors());
+    DoIt(grid, point => point.CompassRoseNeighbors(), 4);
 
     grid.Count(kv => kv.Value == '#').Should().Be(expected);
   }
 
   [Theory]
   [InlineData("Day11.Sample", 26)]
-  [InlineData("Day11", 0)]
+  [InlineData("Day11", 1955)]
   public void Part2(string file, int expected)
   {
     var grid = Convert(AoCLoader.LoadLines(file));
@@ -36,12 +35,12 @@ public class Day11
       }
     }
 
-    DoIt(grid, Open);
+    DoIt(grid, Open, 5);
 
     grid.Count(kv => kv.Value == '#').Should().Be(expected);
   }
 
-  private void DoIt(Dictionary<Point, char> grid, Func<Point, IEnumerable<Point>> open)
+  private void DoIt(Dictionary<Point, char> grid, Func<Point, IEnumerable<Point>> open, int tolerance)
   {
     HashSet<string> seen = [];
     string Key() => grid.OrderBy(kv=>kv.Key.Y).ThenBy(kv=>kv.Key.X).Select(kv=>kv.Value).Join();
@@ -50,8 +49,8 @@ public class Day11
     {
       seen.Add(Key());
       Dictionary<Point, int> counts = grid
+        .Where(kv => kv.Value == '#')
         .SelectMany(kv => open(kv.Key))
-        .Where(neighbor => grid.GetValueOrDefault(neighbor) == '#')
         .GroupToDictionary(it => it, it => it, it => it.Count);
 
       foreach(var (point, value) in grid.ToList())
@@ -59,7 +58,7 @@ public class Day11
         if (value == '.') continue;
         var count = counts.GetValueOrDefault(point);
         if (value == 'L' && count == 0) grid[point] = '#';
-        if (value == '#' && count >= 4) grid[point] = 'L';
+        if (value == '#' && count >= tolerance) grid[point] = 'L';
       }
     }
   }
