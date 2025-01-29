@@ -53,6 +53,8 @@ public static class ParserExtensions
   public static RangeParser<T> Range<T>(this Parser<T> parser, int min, int max) => new(parser, min, max);
   public static RangeParser<T> Star<T>(this Parser<T> parser) => new(parser);
 
+  public static Parser<List<T>> Plus<T, T2>(this Parser<T> parser, Parser<T2> seperator) => parser + parser.After(seperator).Star();
+
   public static Parser<List<T>> Plus<T>(this Parser<T> parser, string seperator) => parser + parser.After(seperator).Star();
   
 
@@ -77,7 +79,7 @@ public static class ParserExtensions
     return false;
   }
 
-  public static List<T> ParseMany<T>(this Parser<T> parser, List<string> x) => x.Select(parser.Parse).ToList();
+  public static List<T> ParseMany<T>(this Parser<T> parser, IEnumerable<string> x) => x.Select(parser.Parse).ToList();
     
   public static T? ParseOrNull<T>(this Parser<T> parser, string x) where T: class {
     var m = parser.Parse(x.ToCharArray(), 0);
