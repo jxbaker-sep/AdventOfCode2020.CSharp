@@ -1,3 +1,5 @@
+using Xunit.Sdk;
+
 namespace Utils;
 
 public static class EnumerableExtensions
@@ -64,5 +66,7 @@ public static class EnumerableExtensions
     foreach(var item in self) result.Enqueue(item);
     return result;
   }
+
+  public static IEnumerable<(T Value, int Index)> WithIndices<T>(this IEnumerable<T> self) => self.Select((it, index) => (it, index));
 
 }
