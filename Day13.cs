@@ -23,6 +23,49 @@ public class Day13
     ((min - timestamp) * needle).Should().Be(expected);
   }
 
+  [Theory]
+  [InlineData("Day13.Sample", 1068781)]
+  [InlineData("Day13", 600689120448303)]
+  public void Part2(string file, int expected)
+  {
+    var (timestamp, schedule) = Convert(AoCLoader.LoadLines(file));
+
+    Sieve(schedule.Select((id, index) => (id, index))
+      .Where(it => it.id != -1)
+      .Select(it => (remainder: MathMod(it.id - it.index, it.id), modulus: it.id))
+      .ToList())
+    .Should().Be(expected);
+  }
+
+  private static long MathMod(long a, long b)
+  {
+    return ((a % b) + b) % b;
+  }
+
+  static long Sieve(List<(long remainder, long modulus)> r) // 
+  {
+    r = r.OrderByDescending(it => it.modulus).ToList();
+    long increment = r[0].modulus;
+    var current = r[0].remainder;
+    var n = 1;
+    var mod = r[1].modulus;
+    var remainder = r[1].remainder;
+    while (n < r.Count)
+    {
+      if (current % mod == remainder)
+      {
+        increment *= mod;
+        n += 1;
+        if (n >= r.Count) return current;
+        mod = r[n].modulus;
+        remainder = r[n].remainder;
+        continue;
+      }
+      current += increment;
+    }
+    throw new ApplicationException();
+  }
+
 
   private static (long, List<long>) Convert(List<string> list)
   {
