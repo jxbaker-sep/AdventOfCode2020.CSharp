@@ -73,7 +73,6 @@ public class Day13
 
   static long CRT(List<(long remainder, long modulus)> r)
   {
-    checked {
     r = [.. r.OrderByDescending(it => it.modulus)];
     var current = r[0];
     foreach(var next in r[1..])
@@ -85,7 +84,6 @@ public class Day13
     }
 
     return current.remainder;
-    }
   }
 
   private static (long gcd, long coeffA, long coeffB) ExtendedEuclidAlgorithm(long a, long b)
