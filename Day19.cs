@@ -86,6 +86,9 @@ public class Day19
 
     if (rewrite)
     {
+      // Well, we're supposed to rewrite 8 and 11. But since we know 0 is 8 11, we can just rewrite 0 and 11.
+      // My parser doesn't do backtracking, so we have to rewrite the rule so it "creeps forward" until it finds
+      // the correct solution, otherwise rule 8 will always overshoot, and rule 11 will never match.
       ps[0].Actual = ps[42].PlusUntil(ps[11]).Select(it => it.Accumulator.Join() + it.Sentinel);
       ps[11].Actual = ps[42].PlusUntil(ps[11] + ps[31]).Select(it => it.Accumulator.Join() + it.Sentinel) | (ps[42] + ps[31]);
     }
