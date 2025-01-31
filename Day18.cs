@@ -77,13 +77,12 @@ public class Day18
     var tail = (P.Sequence(P.String("+").Trim(), head)
       |P.Sequence(P.String("*").Trim(), expressionp)).Star();
     expressionp.Actual = P.Sequence(head, tail)
-      .Select(it => {
-        return it.Second.Aggregate(it.First, (prev, current) => current.First switch {
+      .Select(it => it.Second.Aggregate(it.First, (prev, current) => current.First switch {
           "+" => prev + current.Second,
           "*" => prev * current.Second,
           _ => throw new ApplicationException()
-        });
-      });
+        })
+      );
     return expressionp.End().Parse(input);
   }
 
