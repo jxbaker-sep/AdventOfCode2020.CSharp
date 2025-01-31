@@ -34,10 +34,10 @@ public class Day18
 
   private static long Convert1(string input)
   {    
-    DeferredParser<long> lhsp = new();
-    var lhs_head = P.Long.Trim() | lhsp.Between("(", ")");
-    var lhs_tail = P.Sequence(P.Choice("+", "*").Trim(), lhs_head).Star();
-    lhsp.Actual = P.Sequence(lhs_head, lhs_tail)
+    DeferredParser<long> expressionp = new();
+    var head = P.Long.Trim() | expressionp.Between("(", ")");
+    var tail = P.Sequence(P.Choice("+", "*").Trim(), head).Star();
+    expressionp.Actual = P.Sequence(head, tail)
       .Select(it => {
         return it.Second.Aggregate(it.First, (prev, current) => current.First switch {
           "+" => prev + current.Second,
@@ -45,7 +45,7 @@ public class Day18
           _ => throw new ApplicationException()
         });
       });
-    return lhsp.Parse(input);
+    return expressionp.End().Parse(input);
   }
 
   private static List<long> Convert(List<string> input) => input.Select(Convert1).ToList();
