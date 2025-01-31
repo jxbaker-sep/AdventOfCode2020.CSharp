@@ -270,7 +270,7 @@ public class ParserTests
     [Fact]
     public void UntilTest()
     {
-        var anyThenDo = P.Any.Until(P.String("do()")).Select(it => it.Accumulator.Join() + it.Sentinel);
+        var anyThenDo = P.Any.StarUntil(P.String("do()")).Select(it => it.Accumulator.Join() + it.Sentinel);
         var x = 
         P.Sequence(
             P.String("don't()"),
@@ -332,7 +332,7 @@ public class ParserTests
         // like regex A(A|B)*AB
         var a = P.String("A");
         var b = P.String("B");
-        var parser = P.Sequence(a, (a|b).Until((b+a).End())).Void();
+        var parser = P.Sequence(a, (a|b).StarUntil((b+a).End())).Void();
         var output = parser.Parse(input.ToCharArray(), 0);
         if (expected) output.Should().BeOfType<ParseSuccess<P.Void>>();
         else output.Should().BeOfType<ParseFailure<P.Void>>();

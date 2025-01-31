@@ -166,7 +166,7 @@ public static class ParserExtensions
     return ParseResult.From(new P.Void(), c, i);
   });
 
-  public static Parser<(List<TAccum> Accumulator, TSentinel Sentinel)> Until<TAccum, TSentinel>(this Parser<TAccum> p, Parser<TSentinel> sentinel) => Parser.From((c, i) => {
+  public static Parser<(List<TAccum> Accumulator, TSentinel Sentinel)> StarUntil<TAccum, TSentinel>(this Parser<TAccum> p, Parser<TSentinel> sentinel) => Parser.From((c, i) => {
     List<TAccum> list = [];
     while (true) {
       var v = sentinel.Parse(c, i);
@@ -178,6 +178,9 @@ public static class ParserExtensions
         continue;
       }
       return ((ParseFailure<TAccum>)v2).As<(List<TAccum> First, TSentinel Second)>();
-    }
+    }    
   });
+
+  public static Parser<(List<TAccum> Accumulator, TSentinel Sentinel)> PlusUntil<TAccum, TSentinel>(this Parser<TAccum> p, Parser<TSentinel> sentinel) =>
+    P.Sequence(p, p.StarUntil(sentinel)).Select(it => (new List<TAccum>([it.First, ..it.Second.Accumulator]), it.Second.Sentinel));
 }
