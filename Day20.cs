@@ -70,6 +70,7 @@ public class Day20
             clone[m1.Id] = m1 with {Matched = mm1};
             clone[other.Id] = other with {Matched = mm2};
             foreach(var next in Alignments(clone)) yield return next;
+            yield break;
           }
         }
       }
