@@ -1,7 +1,9 @@
 using System.Diagnostics.Metrics;
 using System.Net.Sockets;
+using System.Threading.Tasks.Dataflow;
 using AdventOfCode2020.CSharp.Utils;
 using FluentAssertions;
+using Newtonsoft.Json.Bson;
 using Parser;
 using Utils;
 using P = Parser.ParserBuiltins;
@@ -17,12 +19,101 @@ public class Day20
   {
     var images = Convert(AoCLoader.LoadFile(file));
 
-    // Sanity check: every image has a unique set of keys
-    images.All(image => image.LL.SelectMany(it => it).Distinct().Count() == image.LL.SelectMany(it => it).Count())
-      .Should().BeTrue();
-
     var legals = Alignments(images.ToDictionary(it => it.Id, it => it))
       .Where(Legal).Select(Score).First().Should().Be(expected);
+  }
+
+  [Theory]
+  [InlineData("Day20.Sample", 273)]
+  [InlineData("Day20", 1565)]
+  public void Part2(string file, int expected)
+  {
+    var images = Convert(AoCLoader.LoadFile(file));
+
+    var legal = Alignments(images.ToDictionary(it => it.Id, it => it))
+      .Where(Legal).First();
+
+    var corner = legal.Values.Where(it => it.Matched.Count(z => z != null) == 2).First();
+    // rotate into top-left
+    while (corner.Matched[0] != null || corner.Matched[3] != null) corner = corner.RotateRight();
+    List<List<Image>> grid = [[corner]];
+    var rowIndex = -1;
+    while (true)
+    {
+      rowIndex++;
+      var row = rowIndex == 0 ? grid[0] : [];
+      var previous = rowIndex == 0 ? corner : grid[rowIndex-1][0];
+      if (rowIndex != 0)
+      {
+        if (previous.Matched[2] == null) break;
+        grid.Add(row);
+        var next = legal[previous.Matched[2] ?? throw new ApplicationException()].Align(previous.LL[2][0], 0);
+        row.Add(next);
+        previous = next;
+      }
+      while (previous.Matched[1] is {} nextId)
+      {
+        var next = legal[nextId].Align(previous.LL[1][0], 3);
+        row.Add(next);
+        previous = next;
+      }
+    }
+
+    var sideLength = grid.Count;
+    var masterImage = Enumerable.Range(0, sideLength * 8)
+      .Select(_ => Enumerable.Repeat('*', sideLength * 8).ToList()).ToList();
+    for(var y = 0; y < sideLength; y++)
+    {
+      for(var x = 0; x < sideLength; x++)
+      {
+        var image = grid[y][x];
+        for(var y2 = 1; y2 < image.Data.Count-1; y2++)
+        {
+          for(var x2 = 1; x2 < image.Data[0].Count-1; x2++)
+          {
+            masterImage[y * 8 + y2 - 1][x * 8 + x2 - 1] = image.Data[y2][x2];
+          }
+        }
+      }
+    }
+
+    var mip = new Image(-1, masterImage, [null,null,null,null]);
+    
+    var sentinel = mip.Data.SelectMany(it => it).Count(it => it == '#');
+
+    foreach(var it in new List<Image>{mip, mip.RotateRight(), mip.RotateRight().RotateRight(),mip.RotateRight().RotateRight().RotateRight(),
+                    mip.FlipHorizontally(), mip.FlipHorizontally().RotateRight(),mip.FlipHorizontally().RotateRight().RotateRight(),mip.FlipHorizontally().RotateRight().RotateRight().RotateRight()})
+    {
+      var x = FindSeaMonsters(it);
+      if (x != 0)
+      {
+        (sentinel - x).Should().Be(expected);
+        return;
+      }
+    }
+    throw new ApplicationException();
+  }
+
+  static int FindSeaMonsters(Image image)
+  {
+    var seaMonster = AoCLoader.LoadLines("Day20.SeaMonster").Gridify().Where(kv => kv.Value == '#')
+      .Select(it => new Vector(it.Key.Y, it.Key.X)).ToList();
+
+    var maxX = seaMonster.Max(it => it.X);
+    var maxY = seaMonster.Max(it => it.Y);
+    HashSet<Point> found = [];
+    for(var y = 0; y < image.Data.Count - maxY; y++)
+    {
+      for(var x = 0; x < image.Data.Count - maxX; x++)
+      {
+        var p = new Point(y,x);
+        if (seaMonster.Select(v => p + v).All(p2 => image.Data[(int)p2.Y][(int)p2.X] == '#'))
+        {
+          foreach(var p2 in seaMonster.Select(v => p + v)) found.Add(p2);
+        }
+      }
+    }
+    return found.Count;
   }
 
   static long Score(Dictionary<long, Image> images)
@@ -87,31 +178,41 @@ public class Day20
     }
   }
 
-  [Fact]
-  public void TransformationSanity()
-  {
-    Image sample = new(0, [['A', 'B', 'C'], ['D', 'E', 'F'], ['H', 'I', 'J']], [0,null,2,3]);
-    for(var y = 0; y < 3; y++) 
-    {
-      Console.WriteLine(sample.Data[y].Join());
-    }
-    Console.WriteLine("xxxxxxxxxxx");
-    Console.WriteLine();
-    for(var y = 0; y < 3; y++) 
-    {
-      Console.WriteLine(sample.RotateRight().Data[y].Join());
-    }
-  }
-
   public record Image(long Id, List<List<char>> Data, IReadOnlyList<long?> Matched)
   {
     public List<List<string>> LL = [Get(Data[0]), Get(Data.Select(it => it[^1]).ToList()), Get(Data[^1]), Get(Data.Select(it => it[0]).ToList())];
+
+    public void Print()
+    {
+      foreach(var y in Enumerable.Range(0, Data.Count))
+      {
+        Console.WriteLine(Data[y].Join());
+      }
+      Console.WriteLine("====================================");
+    }
 
     private static List<string> Get(List<char> input) {
       List<string> result = [input.Join()];
       input = [..input];
       input.Reverse();
       result.Add(input.Join());
+      return result;
+    }
+
+    public Image Align(string key, int incoming)
+    {
+      var index = LL.WithIndices().First(ll => ll.Value.Contains(key)).Index;
+      var rotations = incoming - index;
+      if (rotations < 0) rotations += 4;
+      var result = this;
+      foreach(var _ in Enumerable.Range(0, rotations)) result = result.RotateRight();
+      if (result.LL[incoming][1] == key) 
+      {
+        if (incoming == 3) result = result.FlipVertically();
+        else result = result.FlipHorizontally();
+      } 
+      // sanity
+      result.LL[incoming][0].Should().Be(key);
       return result;
     }
 
