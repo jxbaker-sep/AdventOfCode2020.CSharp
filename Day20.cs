@@ -87,6 +87,22 @@ public class Day20
     }
   }
 
+  [Fact]
+  public void TransformationSanity()
+  {
+    Image sample = new(0, [['A', 'B', 'C'], ['D', 'E', 'F'], ['H', 'I', 'J']], [0,null,2,3]);
+    for(var y = 0; y < 3; y++) 
+    {
+      Console.WriteLine(sample.Data[y].Join());
+    }
+    Console.WriteLine("xxxxxxxxxxx");
+    Console.WriteLine();
+    for(var y = 0; y < 3; y++) 
+    {
+      Console.WriteLine(sample.RotateRight().Data[y].Join());
+    }
+  }
+
   public record Image(long Id, List<List<char>> Data, IReadOnlyList<long?> Matched)
   {
     public List<List<string>> LL = [Get(Data[0]), Get(Data.Select(it => it[^1]).ToList()), Get(Data[^1]), Get(Data.Select(it => it[0]).ToList())];
@@ -97,6 +113,34 @@ public class Day20
       input.Reverse();
       result.Add(input.Join());
       return result;
+    }
+
+    public Image FlipVertically()
+    {
+      List<List<char>> copy = [..Data];
+      copy.Reverse();
+      return new(Id, copy, [Matched[2], Matched[1], Matched[0], Matched[3]]);
+    }
+
+    public Image FlipHorizontally()
+    {
+      List<List<char>> copy = [..Data.Select(d => {List<char> c = [..d]; c.Reverse(); return c;})];
+      return new(Id, copy, [Matched[0], Matched[3], Matched[2], Matched[1]]);
+    }
+
+    public Image RotateRight()
+    {
+      List<List<char>> copy = [];
+      for(var y = 0; y < Data[0].Count; y++)
+      {
+        List<char> row = [];
+        copy.Add(row);
+        for(var x = Data.Count-1; x >= 0; x--)
+        {
+          row.Add(Data[x][y]);
+        }
+      }
+      return new(Id, copy, [Matched[3], Matched[0], Matched[1], Matched[2]]);
     }
   }
 
