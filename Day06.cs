@@ -1,9 +1,6 @@
-
-using System.Linq;
 using AdventOfCode2020.CSharp.Utils;
 using FluentAssertions;
 using Parser;
-using P = Parser.ParserBuiltins;
 
 namespace AdventOfCode2020.CSharp;
 

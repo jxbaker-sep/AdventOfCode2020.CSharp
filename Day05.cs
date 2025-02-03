@@ -1,5 +1,3 @@
-
-using System.Linq;
 using AdventOfCode2020.CSharp.Utils;
 using FluentAssertions;
 using Parser;
