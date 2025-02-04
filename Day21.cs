@@ -17,17 +17,19 @@ public class Day21
 
     var allIngredients = foods.SelectMany(it => it.Ingredients).Distinct().ToList();
     var allAllergens = foods.SelectMany(it => it.Allergens).Distinct().ToList();
+    // a2i maps allergens to possible ingredients.
     var a2i = allAllergens.ToDictionary(it => it, it => allIngredients.ToList());
-    var onSome = allIngredients.ToList();
+    // cantContainAllergen is a list of ingredients that are not on any possible allergen list
+    var cantContainAllergen = allIngredients.ToList();
     foreach(var allergen in allAllergens)
     {
-      var temp = foods.Where(it => it.Allergens.Contains(allergen))
+      var possibleIngredients = foods.Where(it => it.Allergens.Contains(allergen))
         .Aggregate(allIngredients.ToList(), (acc, next) => acc.Intersect(next.Ingredients).ToList());
-      a2i[allergen] = temp;
-      onSome = onSome.Except(temp).ToList();
+      a2i[allergen] = possibleIngredients;
+      cantContainAllergen = cantContainAllergen.Except(possibleIngredients).ToList();
     }
 
-    foods.SelectMany(it => it.Ingredients.Intersect(onSome)).Count().Should().Be(expected);
+    foods.SelectMany(it => it.Ingredients.Intersect(cantContainAllergen)).Count().Should().Be(expected);
 
     Dictionary<string, string> mapped = [];
 

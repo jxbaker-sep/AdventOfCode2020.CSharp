@@ -1,0 +1,39 @@
+using AdventOfCode2020.CSharp.Utils;
+using FluentAssertions;
+using Parser;
+using Utils;
+using P = Parser.ParserBuiltins;
+
+namespace AdventOfCode2020.CSharp;
+
+public class Day22
+{
+  [Theory]
+  [InlineData("Day22.Sample", 306)]
+  [InlineData("Day22", 29764)]
+  public void Part1(string file, long expected)
+  {
+    var zed = Convert(AoCLoader.LoadFile(file));
+    LinkedList<long> player1 = new(zed.Item1);
+    LinkedList<long> player2 = new(zed.Item2);
+
+    while (player1.Count > 0 && player2.Count > 0)
+    {
+      var item1 = player1.First!.Value;
+      var item2 = player2.First!.Value;
+      player1.RemoveFirst();
+      player2.RemoveFirst();
+      if (item1 > item2) { player1.AddLast(item1); player1.AddLast(item2); }
+      else { player2.AddLast(item2); player2.AddLast(item1); }
+    }
+
+    var winner = player1.Count > 0 ? player1 : player2;
+    winner.WithIndices().Select(it => it.Value * ( winner.Count - it.Index)).Sum().Should().Be(expected);
+  }
+
+  private static (List<long>, List<long>) Convert(string input)
+  {
+    return P.Format("Player 1: {} Player 2: {}", P.Long.Trim().Star(), P.Long.Trim().Star())
+      .Parse(input);
+  }
+}
