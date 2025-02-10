@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using AdventOfCode2020.CSharp.Utils;
 using FluentAssertions;
 using Parser;
@@ -13,49 +12,80 @@ public class Day23
   public void Part1(string file, string expected)
   {
     var input = AoCLoader.LoadLines(file).First();
-    Compute(100, input).Should().Be(expected);
+    Compute(100, input, false).Join().Should().Be(expected);
   }
 
   [Theory]
-  [InlineData("389125467", "67384529")]
-  public void Sanity1(string input, string expected)
+  [InlineData("Day23", 166298218695L)]
+  public void Part2(string file, long expected)
   {
-    Compute(100, input).Should().Be(expected);
+    var input = AoCLoader.LoadLines(file).First();
+    Compute(10_000_000, input, true).Take(2).Select(it=>(long)it).Product().Should().Be(expected);
   }
 
-  private static string Compute(int iterations, string input)
+  [Theory]
+  [InlineData("12345", 1, "5234")]
+  [InlineData("389125467", 1, "54673289")]
+  [InlineData("389125467", 100, "67384529")]
+  public void Sanity1(string input, int iterations, string expected)
   {
-    var l = new LinkedList<int>(input.ToCharArray().Select(it => it - '0'));
-    var hv = l.Max();
-    var current = l.First!;
+    Compute(iterations, input, false).Join().Should().Be(expected);
+  }
+
+  [Theory]
+  [InlineData("389125467", 10_000_000, 149245887792)]
+  public void Sanity2(string input, int iterations, long expected)
+  {
+    var z = Compute(iterations, input, true)
+      .Select(it => (long)it).Take(2).ToList();
+    Console.WriteLine($"{z[0]} * {z[1]}");
+    z.Product()
+      .Should().Be(expected);
+  }
+
+  private static IEnumerable<int> Compute(int iterations, string input, bool extend)
+  {
+    const int oneMillion = 1_000_000;
+    var numbers = input.ToCharArray().Select(it => it - '0').ToList();
+    var hv = numbers.Max();
+    int[] after = Enumerable.Repeat(0, Math.Max(extend ? oneMillion : 0, hv) + 1).ToArray();
+    foreach(var (number, index) in numbers.WithIndices()) 
+    {
+      after[number] = numbers[(index+1)%numbers.Count];
+    }
+    if (extend)
+    {
+      after[numbers[^1]] = hv+1;
+      foreach(var index in Enumerable.Range(hv+1, oneMillion - hv))
+      {
+        after[index] = index + 1;
+      }
+      after[oneMillion] = numbers[0];
+    }
+    var currentLabel = numbers[0];
+    hv = Math.Max(extend ? oneMillion : 0, hv);
     foreach(var _ in Enumerable.Range(0, iterations))
     {
-      var n1 = current.NextWrapped();
-      var n2 = n1.NextWrapped();
-      var n3 = n2.NextWrapped();
-      l.Remove(n1);
-      l.Remove(n2);
-      l.Remove(n3);
-      var destinationLabel = current.Value - 1;
-      while (new[]{n1.Value, n2.Value, n3.Value}.Contains(destinationLabel) || destinationLabel < 1)
+      var l1 = after[currentLabel];
+      var l2 = after[l1];
+      var l3 = after[l2];
+      after[currentLabel] = after[l3];
+      var nextLabel = currentLabel - 1;
+      while (nextLabel < 1 || nextLabel == l1 || nextLabel == l2 || nextLabel == l3)
       {
-        if (destinationLabel < 1) { destinationLabel = hv; continue; }
-        destinationLabel--;
+        if (nextLabel < 1) {nextLabel = hv; continue;}
+        nextLabel--;
       }
-      var destinationCup = l.Nodes().First(n => n.Value == destinationLabel);
-      l.AddAfter(destinationCup, n1);
-      l.AddAfter(n1, n2);
-      l.AddAfter(n2, n3);
-      current = current.NextWrapped();
+      var temp = after[nextLabel];
+      after[nextLabel] = l1;
+      after[l3] = temp;
+      currentLabel = after[currentLabel];
     }
 
-    var one = l.Nodes().First(n => n.Value == 1).NextWrapped();
-    var result = "";
-    while (one.Value != 1)
-    {
-      result = $"{result}{one.Value}";
-      one = one.NextWrapped();
+    var n = 1;
+    while (after[n] != 1) {
+      yield return after[n];
+      n = after[n];
     }
-    return result;
   }
 }
