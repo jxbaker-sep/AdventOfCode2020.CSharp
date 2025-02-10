@@ -11,4 +11,9 @@ public static class LinkedListExtensions
       current = current.Next;
     }
   }
+
+  public static LinkedListNode<T> NextWrapped<T>(this LinkedListNode<T> self)
+  {
+    return self.Next ?? self.List!.First!;
+  }
 }
