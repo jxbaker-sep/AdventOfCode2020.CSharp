@@ -37,9 +37,9 @@ public class Day23
   public void Sanity2(string input, int iterations, long expected)
   {
     var z = Compute(iterations, input, true)
-      .Select(it => (long)it).Take(2).ToList();
-    Console.WriteLine($"{z[0]} * {z[1]}");
-    z.Product()
+      .Take(2)
+      .Select(it => (long)it)
+      .Product()
       .Should().Be(expected);
   }
 
@@ -76,9 +76,7 @@ public class Day23
         if (nextLabel < 1) {nextLabel = hv; continue;}
         nextLabel--;
       }
-      var temp = after[nextLabel];
-      after[nextLabel] = l1;
-      after[l3] = temp;
+      (after[nextLabel], after[l3]) = (l1, after[nextLabel]);
       currentLabel = after[currentLabel];
     }
 
