@@ -12,7 +12,7 @@ public class Day24
 {
   [Theory]
   [InlineData("Day24.Sample", 10, 2208)]
-  [InlineData("Day24", 312, 0)]
+  [InlineData("Day24", 312, 3733)]
   public void Part1(string file, int expected1, int expected2)
   {
     var instructions = Convert(AoCLoader.LoadLines(file));
@@ -26,12 +26,12 @@ public class Day24
 
     foreach(var _ in Enumerable.Range(0, 100))
     {
-      var counts = blackHexes.SelectMany(it => Open(it)).GroupToDictionary(it => it, it => it, it => it.Count);
+      var counts = blackHexes.SelectMany(Open).GroupToDictionary(it => it, it => it, it => it.Count);
       HashSet<Hex> next = [];
       foreach(var hex in blackHexes) 
       {
         var count = counts.GetValueOrDefault(hex);
-        if (count == 1) next.Add(hex);
+        if (count == 1 || count == 2) next.Add(hex);
       }
       foreach(var hex in counts.Keys.Except(blackHexes))
       {
@@ -45,11 +45,11 @@ public class Day24
 
   static IEnumerable<Hex> Open(Hex me) {
     yield return me + HexVector.North;
-    yield return me + HexVector.NorthWest;
     yield return me + HexVector.NorthEast;
-    yield return me + HexVector.South;
     yield return me + HexVector.SouthEast;
+    yield return me + HexVector.South;
     yield return me + HexVector.SouthWest;
+    yield return me + HexVector.NorthWest;
   }
 
   private static List<List<HexVector>> Convert(List<string> input)
